@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html,body{margin:0}img{max-width:100%}
+.sitenav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;
+  padding:10px clamp(16px,4vw,28px);background:color-mix(in srgb,var(--surface) 90%,transparent);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.sitenav a{text-decoration:none;font-weight:600;font-size:.9rem;color:var(--ink)}
+.sitenav .home:hover{color:var(--def)}
+.sitenav .crumb{color:var(--faint);font-size:.76rem;margin-right:auto;
+  font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+.sitenav .gh{color:var(--muted)}
+.backhome{max-width:1180px;margin:0 auto;padding:6px 16px 48px}
+.backhome a{color:var(--def);font-weight:600;text-decoration:none}
+.backhome a:hover{text-decoration:underline}
+</style>
+<title>Wireless Security Battlemap</title>
+<style>
+  :root{
+    --bg:#eef0f4; --surface:#ffffff; --surface2:#f7f8fa;
+    --ink:#171c26; --muted:#5c6572; --faint:#8b93a1; --border:#e0e4ea;
+    --atk:#d5314a; --atk-bg:#fdedef; --atk-line:#f4c4cc;
+    --def:#0d8c80; --def-bg:#e6f4f2; --def-line:#b9e2dc;
+    --g-c:#2563eb; --g-i:#c96a09; --g-a:#7c3aed; --g-av:#dc2626; --g-lp:#c02a86; --g-d:#0f9488;
+    --shadow:0 1px 2px rgba(20,25,40,.06),0 3px 10px rgba(20,25,40,.05);
+    color-scheme:light;
+  }
+  :root:not([data-theme="light"]){ @media (prefers-color-scheme:dark){
+    --bg:#0e1218; --surface:#161c26; --surface2:#1c2431;
+    --ink:#e9edf3; --muted:#9aa4b2; --faint:#6b7686; --border:#28313f;
+    --atk:#ff6b7f; --atk-bg:#2a1820; --atk-line:#48222c;
+    --def:#3cc9ba; --def-bg:#0f2420; --def-line:#1d3d38;
+    --g-c:#6ea0ff; --g-i:#e6a24a; --g-a:#b18bff; --g-av:#ff7a7a; --g-lp:#f070b8; --g-d:#43c7bb;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0e1218; --surface:#161c26; --surface2:#1c2431;
+    --ink:#e9edf3; --muted:#9aa4b2; --faint:#6b7686; --border:#28313f;
+    --atk:#ff6b7f; --atk-bg:#2a1820; --atk-line:#48222c;
+    --def:#3cc9ba; --def-bg:#0f2420; --def-line:#1d3d38;
+    --g-c:#6ea0ff; --g-i:#e6a24a; --g-a:#b18bff; --g-av:#ff7a7a; --g-lp:#f070b8; --g-d:#43c7bb;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.45;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding-block:26px;padding-inline:16px}
+  code,.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  h1{font-size:clamp(1.55rem,4.2vw,2.3rem);font-weight:700;letter-spacing:-.02em;margin:0;text-wrap:balance}
+  .sub{color:var(--muted);margin:.5rem 0 0;max-width:64ch}
+  h2{font-size:1.18rem;font-weight:700;letter-spacing:-.01em;margin:0}
+  .eyebrow{font-size:.72rem;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+  section{margin-top:34px}
+  .sec-head{display:flex;flex-direction:column;gap:3px;margin-bottom:14px}
+
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+  .legend{display:flex;flex-wrap:wrap;gap:18px 26px;margin-top:18px}
+  .legend .col{display:flex;flex-direction:column;gap:8px;min-width:min(100%,240px)}
+  .legend .lbl{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .goal{display:inline-flex;align-items:center;gap:6px;font-size:.74rem;font-weight:600;
+    padding:3px 9px;border-radius:999px;border:1px solid transparent;cursor:pointer;user-select:none;
+    background:color-mix(in srgb,var(--gc) 15%,transparent);color:var(--gc);border-color:color-mix(in srgb,var(--gc) 35%,transparent)}
+  .goal .dot{width:8px;height:8px;border-radius:50%;background:var(--gc)}
+  .goal[aria-pressed="false"]{opacity:.34;filter:saturate(.4)}
+  .sysbtn{display:inline-flex;align-items:center;gap:6px;font-size:.74rem;font-weight:600;
+    padding:3px 10px;border-radius:8px;cursor:pointer;user-select:none;
+    background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+  .sysbtn .g{font-size:.85rem;line-height:1}
+  .sysbtn[aria-pressed="true"]{background:color-mix(in srgb,var(--sc) 16%,var(--surface));
+    color:var(--sc);border-color:color-mix(in srgb,var(--sc) 45%,transparent)}
+  .btn{font:inherit;font-size:.78rem;font-weight:600;padding:5px 12px;border-radius:999px;cursor:pointer;
+    background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+  .btn[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+  .filterbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}
+  .hint{font-size:.75rem;color:var(--faint)}
+
+  .band{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+  .band-head{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);
+    background:linear-gradient(0deg,transparent,color-mix(in srgb,var(--layer) 6%,transparent))}
+  .lbadge{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.74rem;letter-spacing:.06em;
+    color:#fff;background:var(--layer);padding:5px 9px;border-radius:7px;white-space:nowrap}
+  .band-head .name{font-weight:700;font-size:1.02rem}
+  .band-head .desc{color:var(--muted);font-size:.82rem}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .side{padding:12px}
+  .side.atk{background:linear-gradient(180deg,color-mix(in srgb,var(--atk) 5%,transparent),transparent)}
+  .side.def{background:linear-gradient(180deg,color-mix(in srgb,var(--def) 6%,transparent),transparent);border-left:1px solid var(--border)}
+  .side-lbl{display:flex;align-items:center;gap:7px;font-size:.72rem;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;margin:2px 4px 10px}
+  .side.atk .side-lbl{color:var(--atk)} .side.def .side-lbl{color:var(--def)}
+  .side-lbl .ar{font-size:.9rem}
+  .cardlist{display:flex;flex-direction:column;gap:9px}
+
+  .card{border:1px solid var(--border);border-radius:11px;padding:10px 11px;background:var(--surface);
+    border-left-width:3px;transition:opacity .18s}
+  .atk .card{border-left-color:var(--atk)} .def .card{border-left-color:var(--def)}
+  .card.dim{opacity:.14;filter:grayscale(.6)}
+  .card .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .card .nm{font-weight:700;font-size:.92rem;line-height:1.25}
+  .card .lec{font-family:"IBM Plex Mono",monospace;font-size:.66rem;color:var(--faint);white-space:nowrap}
+  .card .sysrow{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+  .syspill{display:inline-flex;align-items:center;gap:4px;font-size:.65rem;font-weight:700;letter-spacing:.02em;
+    padding:2px 7px;border-radius:6px;background:color-mix(in srgb,var(--sc) 13%,transparent);
+    color:var(--sc);border:1px solid color-mix(in srgb,var(--sc) 30%,transparent)}
+  .syspill .g{font-size:.78rem;line-height:1}
+  .prop{display:flex;gap:6px;align-items:baseline;margin-top:7px;padding:5px 8px;border-radius:7px;font-size:.78rem}
+  .atk .prop{background:var(--atk-bg);border:1px solid var(--atk-line)}
+  .def .prop{background:var(--def-bg);border:1px solid var(--def-line)}
+  .prop .lab{font-weight:700;font-size:.6rem;letter-spacing:.09em;text-transform:uppercase;flex:none;padding-top:1px}
+  .atk .prop .lab{color:var(--atk)} .def .prop .lab{color:var(--def)}
+  .prop .val{font-weight:600;color:var(--ink)}
+  .solves{display:flex;gap:6px;align-items:baseline;margin-top:6px;font-size:.76rem}
+  .solves .lab{font-weight:700;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;flex:none}
+  .atk .solves .lab{color:var(--atk)} .def .solves .lab{color:var(--def)}
+  .solves .val{color:var(--ink);font-weight:500}
+  .card .ex{font-size:.8rem;color:var(--muted);margin:6px 0 0}
+  .card .ex b{font-weight:600}
+  .card .pre{font-size:.76rem;color:var(--muted);margin-top:5px;display:flex;gap:5px}
+  .card .pre .k{color:var(--faint);flex:none}
+  .card .goals{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+  .gtag{font-size:.66rem;font-weight:700;padding:2px 7px;border-radius:999px;
+    background:color-mix(in srgb,var(--gc) 15%,transparent);color:var(--gc)}
+
+  .duels{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .duel{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);
+    padding:13px 14px;display:flex;flex-direction:column;gap:9px}
+  .duel .theme{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .duel .row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:9px}
+  .mini{border-radius:9px;padding:8px 9px;font-size:.8rem}
+  .mini .t{font-weight:700;font-size:.8rem;display:block;margin-bottom:2px}
+  .mini.a{background:var(--atk-bg);border:1px solid var(--atk-line);color:var(--ink)}
+  .mini.d{background:var(--def-bg);border:1px solid var(--def-line);color:var(--ink)}
+  .mini .s{color:var(--muted);font-size:.74rem}
+  .vs{font-family:"IBM Plex Mono",monospace;font-weight:700;color:var(--faint);font-size:.78rem;text-align:center}
+  .duel .key{font-size:.78rem;color:var(--muted);border-top:1px dashed var(--border);padding-top:8px}
+  .duel .key b{color:var(--ink);font-weight:600}
+
+  .principles{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:11px}
+  .pr{background:var(--surface);border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow);
+    padding:13px 14px;display:flex;gap:11px;align-items:flex-start}
+  .pr .no{font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:.95rem;color:var(--surface);
+    background:var(--ink);min-width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:none}
+  .pr .body .h{font-weight:700;font-size:.9rem;margin-bottom:3px}
+  .pr .body .d{font-size:.8rem;color:var(--muted)}
+  .pr .body .d code{font-size:.76rem;background:var(--surface2);padding:1px 5px;border-radius:5px}
+
+  .facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:11px}
+  .fact{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:11px 12px}
+  .fact .h{font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+  .fact .f{font-family:"IBM Plex Mono",monospace;font-size:.82rem;color:var(--ink);line-height:1.6}
+  .fact .f b{color:var(--def)}
+  footer{margin-top:34px;color:var(--faint);font-size:.76rem;text-align:center;border-top:1px solid var(--border);padding-top:16px}
+
+  @media(max-width:640px){
+    .cols{grid-template-columns:1fr}
+    .side.def{border-left:none;border-top:1px solid var(--border)}
+    .duel .row{grid-template-columns:1fr;text-align:left}
+    .vs{text-align:left}
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+
+</head>
+<body>
+<nav class="sitenav">
+  <a class="home" href="../index.html">&larr; Yihao</a>
+  <span class="crumb">Article</span>
+  <a class="gh" href="https://github.com/Yihao23">GitHub &#9650;</a>
+</nav>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Foundations of Wireless Security 2026 · CISPA</div>
+    <h1>Wireless Security Battlemap</h1>
+    <p class="sub">Every mechanism placed on the layer whose property it abuses or defends, tagged with the <b>radio system</b> it lives in, the security goal it touches, and the precondition that makes it work. Attacks left, defences right. Tap a system or goal to focus.</p>
+
+    <div class="panel legend" style="margin-top:18px">
+      <div class="col" style="flex:1 1 320px">
+        <span class="lbl">Radio system — click to filter</span>
+        <div class="chips" id="syschips"></div>
+      </div>
+      <div class="col" style="flex:1 1 300px">
+        <span class="lbl">Security goal — click to filter</span>
+        <div class="chips" id="goalchips"></div>
+      </div>
+      <div class="col" style="flex:0 0 auto">
+        <span class="lbl">Layers</span>
+        <div class="chips" id="layerchips"></div>
+      </div>
+    </div>
+    <div class="filterbar">
+      <button class="btn" id="reset" aria-pressed="true">Show everything</button>
+      <span class="hint" id="count"></span>
+    </div>
+  </header>
+
+  <section id="battlefield">
+    <div class="sec-head"><span class="eyebrow">Parts A + B</span><h2>The battlefield, layer by layer</h2></div>
+    <div id="bands"></div>
+  </section>
+
+  <section id="duels-sec">
+    <div class="sec-head"><span class="eyebrow">Attack ⇄ Defence</span><h2>Duels — what beats what</h2></div>
+    <div class="duels" id="duels"></div>
+  </section>
+
+  <section id="principles-sec">
+    <div class="sec-head"><span class="eyebrow">Part C</span><h2>Twelve principles the exam loves</h2></div>
+    <div class="principles" id="principles"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">Cheat box</span><h2>Formulas &amp; numbers to memorise</h2></div>
+    <div class="facts" id="facts"></div>
+  </section>
+
+  <footer>Sources: Lectures 1–10, Tutorials 1–4, papers LEO-Range · V-Range · MTAC. Companion to <code>EXAM_STUDY_GUIDE.md</code>.</footer>
+</div>
+
+<script>
+const GOALS={
+  C:{name:"Confidentiality",v:"--g-c"}, I:{name:"Integrity",v:"--g-i"},
+  A:{name:"Auth / Access",v:"--g-a"}, AV:{name:"Availability",v:"--g-av"},
+  LP:{name:"Location privacy",v:"--g-lp"}, D:{name:"Distance / Position / Time",v:"--g-d"}
+};
+const LAYERS={
+  PHY:{name:"Physical",v:"#3b6fd6",desc:"waveform · power · channel · pulses"},
+  MAC:{name:"Protocol / MAC",v:"#7c5cd6",desc:"frame fields · identifiers · state machine"},
+  CRY:{name:"Cryptographic",v:"#c0417a",desc:"keys · keystream · MAC · handshakes"},
+  GEO:{name:"Geographic-spatial",v:"#188f78",desc:"geometry · receiver placement · polygons"},
+  TIM:{name:"Timing",v:"#c07a12",desc:"time-of-flight · processing time · delay"},
+  SC:{name:"Side-channel / Impl.",v:"#6b7280",desc:"leakage · fingerprints · manufacturing"}
+};
+const SYS={
+  WIFI:{name:"WiFi",g:"📶",v:"#1f7ae0"},
+  BLE:{name:"Bluetooth / BLE",g:"🔵",v:"#2f6bd8"},
+  GNSS:{name:"GPS / GNSS",g:"🛰️",v:"#2aa198"},
+  CELL:{name:"Cellular 4G/5G",g:"📱",v:"#8a5cf0"},
+  UWB:{name:"UWB 802.15.4z",g:"⏱️",v:"#d98324"},
+  CAR:{name:"Car key / RFID",g:"🚗",v:"#c0417a"},
+  ANY:{name:"Any radio",g:"📡",v:"#6b7280"}
+};
+// sys = which hardware/radio it applies to. property abused/relied = first clause of ex.
+const ATTACKS=[
+ {n:"Full-band jamming",l:"PHY",sys:["ANY"],g:["AV"],prop:"Shared medium — SNR / noise floor",ex:"J <b>adds as noise</b> at the receiver, lowers SNR",pre:"in range + power; cost ∝ BW·amp²·time",r:"L1/7"},
+ {n:"Reactive jamming",l:"PHY",sys:["ANY"],g:["AV"],prop:"A transmission is detectable on air",ex:"listen, then jam <b>only when a packet starts</b>",pre:"fast sense + react",r:"L1"},
+ {n:"Protocol-aware / selective jamming",l:"PHY",sys:["WIFI","ANY"],g:["AV"],prop:"Sync depends on preamble / pilots / control",ex:"jam only those fields the Rx needs to synchronise",pre:"knows protocol; fast (chip RAM ~48 B)",r:"L1/9"},
+ {n:"FHSS follower jammer",l:"PHY",sys:["BLE"],g:["AV"],prop:"Hop frequency is detectable in time",ex:"detect the current hop, then jam it",pre:"retune within 67% of the hop",r:"L7"},
+ {n:"Overshadowing (AdaptOver)",l:"PHY",sys:["CELL"],g:["I","A"],prop:"Signal superposition at the antenna",solves:"Overwrite a real message — no rogue base station needed",ex:"a <b>stronger</b> correct-looking copy wins over the real one",pre:"more Rx power + right timing/format",r:"L1/10"},
+ {n:"Annihilation + replay",l:"PHY",sys:["UWB"],g:["D"],prop:"Signal superposition — phase cancellation",ex:"cancel early path (opposite phase), replay later → longer distance",pre:"channel / phase knowledge",r:"L2/4"},
+ {n:"Early-Detect / Late-Commit",l:"PHY",sys:["UWB","CELL"],g:["D"],prop:"Symbol redundancy over time (averaging)",ex:"long symbol → <b>decide early, commit late</b>",pre:"predictable symbol, no PHY integrity check",r:"L3/4/6"},
+ {n:"Cicada++ / HRP leading-edge",l:"PHY",sys:["UWB"],g:["D"],prop:"First-path (leading-edge) detection thresholds",ex:"inject a peak <b>before</b> the true early path, still passes PAPR/MPEP",pre:"no STS knowledge (Cicada); higher PRF/power",r:"L3"},
+ {n:"CFO manipulation",l:"PHY",sys:["CELL","UWB","WIFI"],g:["D"],prop:"CFO estimated from fixed reference signals",ex:"overshadow the references → wrong CFO, legit fails to decode",pre:"coherent QAM Rx; ~10 kHz mismatch",r:"L4"},
+ {n:"RF / device fingerprinting",l:"SC",sys:["BLE","WIFI"],g:["LP"],prop:"Hardware analog imperfections (CFO, I/Q)",ex:"they <b>survive every digital ID change</b>",pre:"passive, learn a profile",r:"L1/8"},
+ {n:"Screaming Channels / sensor injection",l:"SC",sys:["ANY"],g:["C","I"],prop:"Unintended EM emanation / sensor resonance",ex:"crypto leakage up-converted by radio; RF at a sensor's resonance",pre:"nearby receiver / emitter",r:"L1"},
+ {n:"Dragonblood side-channel",l:"SC",sys:["WIFI"],g:["A"],prop:"Password-dependent execution time",ex:"hash-to-curve <b>iteration count depends on the password</b>",pre:"WPA3 transition mode / local access",r:"L9"},
+ {n:"Relay / mafia fraud",l:"MAC",sys:["CAR","UWB"],g:["A","D"],prop:"Proximity inferred from communication (ToF unchecked)",ex:"forward challenge/response w/o crypto → far key looks near",pre:"two relay nodes; victim tolerates delay",r:"L1/2"},
+ {n:"RSSI manipulation",l:"MAC",sys:["WIFI","BLE"],g:["D"],prop:"Received power — not cryptographically verifiable",ex:"change Tx power / add noise / amplified replay → wrong distance",pre:"untrusted prover or 3rd party",r:"L2"},
+ {n:"Evil-twin / rogue AP",l:"MAC",sys:["WIFI"],g:["A","C"],prop:"No pre-shared AP credential / identity",ex:"clone SSID+MAC, victim can't tell real from fake",pre:"win the association",r:"L1/8"},
+ {n:"Downgrade / bidding-down",l:"MAC",sys:["WIFI","CELL"],g:["C","A"],prop:"Backward-compatible weak modes offered",ex:"force the weakest cipher / old generation lacking mutual auth",pre:"transition/legacy support exists",r:"L1/9"},
+ {n:"IMSI catcher",l:"MAC",sys:["CELL"],g:["LP","A"],prop:"Identity sent before authentication",ex:"phone attaches to strongest cell and reveals its IMSI",pre:"fake base station, high power (detectable)",r:"L1/10"},
+ {n:"Identifier-continuity linking",l:"MAC",sys:["WIFI","BLE"],g:["LP"],prop:"A non-rotating observable (IE / seq-no / token)",ex:"it <b>survives the rotation</b> and re-links old↔new ID",pre:"passive observer",r:"L10/T4"},
+ {n:"LTrack IMSI Extractor",l:"MAC",sys:["CELL"],g:["LP"],prop:"Identity Request unauthenticated pre-security-context",solves:"Get the permanent IMSI stealthily — no detectable fake cell",ex:"overshadow it → phone replies with real IMSI",pre:"brief active injection",r:"L10"},
+ {n:"WEP keystream reuse",l:"CRY",sys:["WIFI"],g:["C"],prop:"IV reuse (24-bit) → keystream reuse",ex:"same IV ⇒ <b>C₁⊕C₂ = P₁⊕P₂</b>",pre:"record + predictable plaintext",r:"L9"},
+ {n:"WEP bit-flip (CRC linear)",l:"CRY",sys:["WIFI"],g:["I"],prop:"CRC linearity (keyless checksum)",ex:"<b>C′=C⊕⟨Δ,c(Δ)⟩</b> → M⊕Δ with valid checksum",pre:"one ciphertext, no key",r:"L9"},
+ {n:"ChopChop / Beck-Tews",l:"CRY",sys:["WIFI"],g:["C","I"],prop:"Accept/MIC-failure oracle + reversible checksum/MIC",ex:"AP tells you if a guess was right, byte by byte",pre:"inject to AP; TSC per-QoS",r:"L9"},
+ {n:"KRACK (key reinstallation)",l:"CRY",sys:["WIFI"],g:["C"],prop:"Counter/nonce reset on key reinstall",ex:"replay Msg3 → same PTK reinstalled → keystream reuse",pre:"MitM (same MAC, diff channel); block Msg4",r:"L9"},
+ {n:"GPS spoofing (naive / seamless)",l:"GEO",sys:["GNSS"],g:["D"],prop:"Public, unauthenticated C/A signal",ex:"align peak (code+Doppler), raise power, slowly drag",pre:"stronger signal, ~$225 SDR",r:"L5/T3"},
+ {n:"Group / wide-area spoofing (WASP)",l:"GEO",sys:["GNSS"],g:["D"],prop:"Attacker controls signals, times & positions",ex:"craft them so <b>many receivers stay mutually consistent</b>",pre:"coordinated transmitters",r:"L5/6"},
+ {n:"Relay / selective-delay on authed GNSS",l:"TIM",sys:["GNSS"],g:["D"],prop:"Clock bias absorbs delay (ToA not authenticated)",ex:"auth stops forgery <b>not delay</b> → shifted position/time",pre:"record + re-transmit with chosen delay",r:"L5"},
+ {n:"Asymmetric-delay on time transfer",l:"TIM",sys:["GNSS","ANY"],g:["D"],prop:"Symmetric-propagation assumption",ex:"delay one direction ⇒ <b>δ̂ = δ + D_b/2</b>",pre:"MitM (NTP/PTP/TWR)",r:"L5/6"},
+ {n:"Meaconing",l:"TIM",sys:["GNSS"],g:["D"],prop:"A recorded real signal is still valid (no auth)",solves:"Spoof position/time with ZERO code knowledge",ex:"record and <b>rebroadcast it delayed</b>",pre:"no code knowledge needed",r:"T3"},
+ {n:"CrossLink",l:"GEO",sys:["WIFI","BLE","CELL"],g:["LP"],prop:"Unsynchronised per-protocol rotation",solves:"Defeats identifier rotation — structural, unpatchable",ex:"one protocol's stable ID <b>bridges another's rotation</b>",pre:"passive; sniffers at known positions; ranging only",r:"L10/T4"}
+];
+const DEFENCES=[
+ {n:"Spread spectrum FHSS / DSSS (secret)",l:"PHY",sys:["BLE","GNSS","ANY"],g:["AV","C"],prop:"Secret hop / spreading code (processing gain)",ex:"despread <b>spreads the jammer</b> by G_p, hides signal (LPI)",pre:"shared key — fails public code, insider, broadband",r:"L7"},
+ {n:"UDSSS / UFH",l:"PHY",sys:["GNSS","ANY"],g:["AV"],prop:"Public code set + random choice (no shared key)",solves:"Breaks the anti-jamming ⇄ key-establishment deadlock",ex:"receivers buffer + trial-decode; jammer can't know the pick",pre:"breaks key⇄AJ cycle; needs repetition",r:"L7"},
+ {n:"Desmedt broadcast AJ",l:"PHY",sys:["ANY"],g:["AV"],prop:"Public CAT + secret FAT, threshold coverage",solves:"Anti-jamming BROADCAST that survives malicious insiders",ex:"≤ j−1 colluders can't cover all of a receiver's channels",pre:"at most j−1 colluders",r:"L7"},
+ {n:"Friendly jamming / IMD Shield",l:"PHY",sys:["ANY"],g:["C"],prop:"Channel indistinguishability within λ/2",solves:"Confidentiality for devices too weak to run crypto (implants)",ex:"Rx subtracts the noise (shared key); <b>Eve can't separate</b>",pre:"DJ<λ/2 AND single-antenna Eve — fails MIMO",r:"L8"},
+ {n:"Channel-based key agreement",l:"PHY",sys:["WIFI","BLE"],g:["C"],prop:"Channel reciprocity + λ/2 decorrelation",solves:"A shared key with no pre-shared secret / no PKI",ex:"shared multipath = key; RSSI easiest (entropy = movement)",pre:"within coherence time — no authentication",r:"L1/8"},
+ {n:"Zero forcing / orthogonal blinding",l:"PHY",sys:["WIFI"],g:["C"],prop:"Spatial channel / null space (MIMO)",ex:"null the signal at the attacker (ZF) or noise into Rx null space (OB)",pre:"know channel(s) — no auth, known-plaintext breaks OB",r:"L8"},
+ {n:"Integrity codes (presence)",l:"PHY",sys:["ANY"],g:["I","A"],prop:"Energy can be added, not annihilated (fixed Hamming weight)",solves:"Broadcast authentication with ZERO pre-shared keys / certs",ex:"Manchester fixes weight; any 0→1 injection changes it",pre:"cannot annihilate 1→0; sender always on",r:"L8"},
+ {n:"UWB-PR pulse reordering",l:"PHY",sys:["UWB"],g:["D"],prop:"Secret pulse permutation (hidden symbol boundaries)",solves:"Makes long (high-range) symbols safe against ED/LC",ex:"symbol shape unpredictable → <b>stops ED/LC</b>",pre:"shared secret permutation",r:"L4"},
+ {n:"UWB-ED / V-Range / LEO-Range",l:"PHY",sys:["UWB","CELL","GNSS"],g:["D"],prop:"Residual variance / SER (physical-layer integrity)",solves:"Secure ranging on standard OFDM / long symbols (5G, LEO)",ex:"short peak + variance check; mean steerable, <b>variance not</b>",pre:"symbols within coherence time",r:"L4"},
+ {n:"Distance bounding (DB3, rapid bit)",l:"TIM",sys:["UWB","CAR"],g:["D"],prop:"Speed of light + unpredictable nonce + minimal T_p",solves:"Proves physical proximity (defeats relay / mafia fraud)",ex:"<b>d=(t_r−t_s)·v/2</b> is always an upper bound",pre:"T_p minimal & known; 1 bit/round → 2⁻ⁿ",r:"L2/6"},
+ {n:"Wi-Fi FTM / RTToA",l:"TIM",sys:["WIFI"],g:["D"],prop:"Symmetric round-trip time",ex:"RTT=(1/n)Σ[(t4−t1)−(t3−t2)], <b>relay-resistant</b>",pre:"authenticated timestamps; fast medium (RF)",r:"L2"},
+ {n:"Verifiable Multilateration",l:"GEO",sys:["UWB","ANY"],g:["D"],prop:"Attacker can only enlarge + point-in-polygon",solves:"Turns distance-bounding into a secure 2-D/3-D position",ex:"enlarged distances are inconsistent inside the polygon",pre:"UE inside polygon — dense infra, doesn't scale",r:"L5/6"},
+ {n:"TRICK",l:"GEO",sys:["GNSS","CELL"],g:["D"],prop:"Non-reducibility + local-clock interval (δ cancels)",solves:"Secure positioning that finally SCALES (vs VM)",ex:"1 TWR + broadcasts → ellipsoids that can only grow",pre:"known altitude, good GDOP",r:"L5/6"},
+ {n:"AoA / SPREE / multi-receiver detection",l:"GEO",sys:["GNSS"],g:["D"],prop:"Angle-of-arrival / spatial geometry",ex:"real satellites <b>different angles</b>; track all peaks",pre:"single/omnidirectional spoofer — fails distributed",r:"L5"},
+ {n:"MAC / signature + freshness",l:"CRY",sys:["ANY"],g:["I","A"],prop:"Keyed integrity + nonce / counter",ex:"unforgeable without key; freshness stops replay",pre:"shared key or PKI",r:"all"},
+ {n:"WPA2 CCMP",l:"CRY",sys:["WIFI"],g:["C","I"],prop:"Per-packet counter (unique nonce) + CBC-MAC",ex:"AES-CTR never reuses keystream; CBC-MAC gives integrity",pre:"fails under KRACK nonce reuse",r:"L9"},
+ {n:"WPA2 4-way handshake",l:"CRY",sys:["WIFI"],g:["A"],prop:"Fresh PTK from PMK + nonces (mutual)",ex:"PMK never on air; both sides prove they know it",pre:"weak pwd → dictionary; KRACK install timing",r:"L9"},
+ {n:"WPA3 SAE / Dragonfly",l:"CRY",sys:["WIFI"],g:["A"],prop:"PAKE — password guessing must be online",solves:"Protects weak human passwords from offline dictionary attacks",ex:"low→high entropy key, forward secrecy, anti-dictionary",pre:"transition downgrade / side channel break it",r:"L9"},
+ {n:"TESLA (delayed key disclosure)",l:"CRY",sys:["GNSS"],g:["I","A"],prop:"Time asymmetry + one-way hash chain",solves:"Broadcast authentication using only symmetric crypto",ex:"key disclosed only after its interval → can't forge in time",pre:"loose time sync — forgery only, not delay",r:"L5"},
+ {n:"Kuhn hidden markers",l:"CRY",sys:["GNSS"],g:["D"],prop:"Delayed disclosure of a secret spreading code",solves:"Stops PHY distance-reduction on broadcast GNSS",ex:"code below noise, later disclosed+signed → <b>can't advance</b>",pre:"broadband Rx — fails full-band relay / separation",r:"L5"},
+ {n:"Identifier rotation",l:"MAC",sys:["WIFI","BLE","CELL"],g:["LP"],prop:"Unlinkable temporary identifiers",ex:"new ID can't be tied to the old (MAC rand., TMSI, RPA)",pre:"fails if ANY observable carries continuity",r:"L10"}
+];
+const DUELS=[
+ {t:"Reduce distance (UWB)",a:["Early-Detect / Late-Commit","long symbols averaged → answer early"],d:["UWB-PR + short symbols","secret reordering hides symbol shape"],k:"Symbol structure must be <b>unpredictable</b> until sent."},
+ {t:"Keystream reuse (WiFi)",a:["WEP IV / KRACK","same keystream twice ⇒ C₁⊕C₂=P₁⊕P₂"],d:["AES-CTR per-packet counter","fresh nonce every packet"],k:"Nonce/counter must <b>never repeat or reset</b>."},
+ {t:"Forge a frame (WiFi)",a:["WEP bit-flip","CRC is keyless & linear"],d:["Keyed MAC","attacker can't compute it"],k:"<b>CRC ≠ MAC</b> — only a key gives integrity."},
+ {t:"Relay / mafia fraud (car key)",a:["PKES relay","communication ≠ proximity"],d:["Distance bounding","physics: nothing beats c"],k:"Encryption can't stop a relay — <b>only timing can</b>."},
+ {t:"Spoof position/time (GNSS)",a:["GNSS spoof / delay","public, unauthenticated signal"],d:["TESLA + VM/TRICK","auth data + geometry"],k:"Auth stops <b>forgery</b>; geometry stops <b>delay</b>."},
+ {t:"Deny the channel (any)",a:["Jamming","raise the noise floor"],d:["Spread spectrum / UDSSS","spread jammer, hide signal"],k:"Works until the code is <b>public</b> or jammer <b>broadband</b>."},
+ {t:"Hide the data (implant)",a:["MIMO 2-antenna attack","subtract A−B, cancel jamming"],d:["Friendly jamming","noise Eve can't separate"],k:"Holds <b>only vs single-antenna Eve</b>, DJ<λ/2."},
+ {t:"Crack the password (WiFi)",a:["Offline dictionary","weak PMK, captured handshake"],d:["WPA3 PAKE (Dragonfly)","each guess needs an online step"],k:"Turns <b>low-entropy pw</b> into high-entropy key."},
+ {t:"Track a device (cross-radio)",a:["CrossLink","independent rotations bridge each other"],d:["Joint rotation (open)","rotate all radios together"],k:"Per-protocol design → <b>structural</b> leak, not a bug."}
+];
+const PRIN=[
+ ["Encryption ≠ everything","Protects payload only — not replay, relay, metadata, location, arrival-time, or GNSS position."],
+ ["CRC ≠ MAC","Keyless & linear ⇒ forgeable. Only a keyed MAC / signature gives integrity vs an active attacker."],
+ ["\"Proven\" ≠ safe","Proofs cover a model. KRACK & Dragonblood live <i>outside</i> it (install timing, side channels)."],
+ ["Nonce reuse is the killer","WEP 24-bit IV, TKIP, KRACK counter reset. Same keystream ⇒ <code>C₁⊕C₂=P₁⊕P₂</code>."],
+ ["Physics constraint = c","Nothing travels faster than light. Distance bounding turns that into security."],
+ ["Attacker can only enlarge","With DB / non-reducibility, delays only add ≥0 → basis of VM & TRICK."],
+ ["λ/2 decorrelation","Underpins channel keygen & friendly jamming. 6.25 cm @2.4 GHz, 37.5 cm @400 MHz."],
+ ["Backward compatibility hurts","TKIP lingering, WPA3 transition-mode downgrade — safety = the weakest option."],
+ ["Independent design → linkable","Each protocol correct, the composition insecure (CrossLink)."],
+ ["Mean steerable, variance not","MTAC/V-Range: variance / distortion is the right test statistic."],
+ ["Public + unauthenticated ⇒ spoofable","Civil GPS, 802.11b Barker code — anyone can regenerate them."],
+ ["Processing gain buys margin","<code>G_p = chip rate / bit rate</code>; jam margin M_J=G_p−L_sys−SNR_out; GPS ≈43 dB."]
+];
+const FACTS=[
+ ["Distance bounding · UWB/car",'d = <b>(t_r−t_s)·v/2</b> (DB3, upper bound)<br>1 ns ≈ 30 cm · 1 µs ≈ 150 m RTT'],
+ ["Keystream reuse · WiFi",'C = P ⊕ RC4(IV,k)<br><b>C₁⊕C₂ = P₁⊕P₂</b><br>WEP IV = 24 bit → repeats ½ day'],
+ ["λ/2 fading · WiFi/BLE",'fading 20–30 dB within λ/2<br>6.25 cm @2.4 GHz · 37.5 cm @400 MHz'],
+ ["Processing gain · GPS",'G_p = R_c/R_b<br>GPS = 1.023M/50 ≈ <b>43 dB</b>'],
+ ["ED / LC gain · UWB/5G",'up to <b>2·T_sym</b><br>1 µs ≈ 300 m · 1 ns ≈ 0.3 m'],
+ ["Timing Advance · Cellular",'step 16·T_s = 0.5208 µs = <b>78 m</b> ring'],
+ ["Time transfer · GNSS/NTP",'δ̂ = [(t2−t1)−(t4−t3)]/2<br>attack: <b>δ̂ = δ + D_b/2</b>'],
+ ["WiFi security timeline",'WEP 97 · TKIP 03 · WPA2 04 (proof 05)<br>KRACK 17 · WPA3 18 · Dragonblood 20']
+];
+
+let activeGoals=new Set(Object.keys(GOALS));
+let activeSys=new Set(Object.keys(SYS));
+
+// system filter chips
+const sc=document.getElementById('syschips');
+Object.entries(SYS).forEach(([k,o])=>{
+  const b=document.createElement('button');
+  b.className='sysbtn';b.style.setProperty('--sc',o.v);
+  b.setAttribute('aria-pressed','true');b.dataset.s=k;
+  b.innerHTML=`<span class="g">${o.g}</span>${o.name}`;
+  b.onclick=()=>{ activeSys.has(k)?activeSys.delete(k):activeSys.add(k);
+    b.setAttribute('aria-pressed',activeSys.has(k)); applyFilter(); };
+  sc.appendChild(b);
+});
+// goal filter chips
+const gc=document.getElementById('goalchips');
+Object.entries(GOALS).forEach(([k,o])=>{
+  const b=document.createElement('button');
+  b.className='goal';b.style.setProperty('--gc',`var(${o.v})`);
+  b.setAttribute('aria-pressed','true');b.dataset.g=k;
+  b.innerHTML=`<span class="dot"></span>${o.name}`;
+  b.onclick=()=>{ activeGoals.has(k)?activeGoals.delete(k):activeGoals.add(k);
+    b.setAttribute('aria-pressed',activeGoals.has(k)); applyFilter(); };
+  gc.appendChild(b);
+});
+// layer legend (static)
+const lc=document.getElementById('layerchips');
+Object.entries(LAYERS).forEach(([k,o])=>{
+  const s=document.createElement('span');
+  s.className='goal';s.style.setProperty('--gc',o.v);s.style.cursor='default';
+  s.innerHTML=`<span class="dot"></span><span class="mono">${k}</span>`;
+  lc.appendChild(s);
+});
+
+function gtag(k){const o=GOALS[k];return `<span class="gtag" style="--gc:var(${o.v})">${k}</span>`;}
+function spill(k){const o=SYS[k];return `<span class="syspill" style="--sc:${o.v}"><span class="g">${o.g}</span>${o.name}</span>`;}
+function card(item,kind){
+  const lab=kind==='atk'?'Exploits':'Uses';
+  return `<div class="card" data-goals="${item.g.join(',')}" data-sys="${item.sys.join(',')}">
+    <div class="top"><span class="nm">${item.n}</span><span class="lec">${item.r}</span></div>
+    <div class="sysrow">${item.sys.map(spill).join('')}</div>
+    <div class="prop"><span class="lab">${lab}</span><span class="val">${item.prop}</span></div>
+    ${item.solves?`<div class="solves"><span class="lab">✦ ${kind==='atk'?'Enables':'Solves'}</span><span class="val">${item.solves}</span></div>`:''}
+    <p class="ex">${item.ex}</p>
+    <div class="pre"><span class="k">◆</span><span>${item.pre}</span></div>
+    <div class="goals">${item.g.map(gtag).join('')}</div></div>`;
+}
+
+const bands=document.getElementById('bands');
+Object.entries(LAYERS).forEach(([k,o])=>{
+  const atk=ATTACKS.filter(a=>a.l===k), def=DEFENCES.filter(d=>d.l===k);
+  if(!atk.length&&!def.length) return;
+  const el=document.createElement('div');el.className='band';el.style.setProperty('--layer',o.v);
+  el.innerHTML=`
+    <div class="band-head">
+      <span class="lbadge">${k}</span>
+      <div><div class="name">${o.name}</div><div class="desc">${o.desc}</div></div>
+    </div>
+    <div class="cols">
+      <div class="side atk"><div class="side-lbl"><span class="ar">▸</span>Attacks · exploit</div>
+        <div class="cardlist">${atk.map(a=>card(a,'atk')).join('')||'<div class="hint" style="padding:6px">—</div>'}</div></div>
+      <div class="side def"><div class="side-lbl"><span class="ar">▸</span>Defences · rely on</div>
+        <div class="cardlist">${def.map(d=>card(d,'def')).join('')||'<div class="hint" style="padding:6px">—</div>'}</div></div>
+    </div>`;
+  bands.appendChild(el);
+});
+
+document.getElementById('duels').innerHTML=DUELS.map(x=>`
+  <div class="duel"><span class="theme">${x.t}</span>
+    <div class="row">
+      <div class="mini a"><span class="t">${x.a[0]}</span><span class="s">${x.a[1]}</span></div>
+      <span class="vs">vs</span>
+      <div class="mini d"><span class="t">${x.d[0]}</span><span class="s">${x.d[1]}</span></div>
+    </div>
+    <div class="key">🔑 ${x.k}</div>
+  </div>`).join('');
+document.getElementById('principles').innerHTML=PRIN.map((p,i)=>`
+  <div class="pr"><div class="no">${i+1}</div>
+    <div class="body"><div class="h">${p[0]}</div><div class="d">${p[1]}</div></div></div>`).join('');
+document.getElementById('facts').innerHTML=FACTS.map(f=>`
+  <div class="fact"><div class="h">${f[0]}</div><div class="f">${f[1]}</div></div>`).join('');
+
+function applyFilter(){
+  const allG=activeGoals.size===Object.keys(GOALS).length;
+  const allS=activeSys.size===Object.keys(SYS).length;
+  document.getElementById('reset').setAttribute('aria-pressed',allG&&allS);
+  let shown=0,total=0;
+  document.querySelectorAll('.card').forEach(c=>{
+    total++;
+    const gs=c.dataset.goals.split(','), ss=c.dataset.sys.split(',');
+    const gm=allG||gs.some(g=>activeGoals.has(g));
+    const sm=allS||ss.some(s=>activeSys.has(s));
+    const match=gm&&sm;
+    c.classList.toggle('dim',!match);
+    if(match) shown++;
+  });
+  document.getElementById('count').textContent=(allG&&allS)?`${total} mechanisms`:`${shown} of ${total} match`;
+}
+document.getElementById('reset').onclick=()=>{
+  activeGoals=new Set(Object.keys(GOALS)); activeSys=new Set(Object.keys(SYS));
+  document.querySelectorAll('#goalchips .goal').forEach(b=>b.setAttribute('aria-pressed','true'));
+  document.querySelectorAll('#syschips .sysbtn').forEach(b=>b.setAttribute('aria-pressed','true'));
+  applyFilter();
+};
+applyFilter();
+</script>
+<div class="backhome"><a href="../index.html">&larr; Back to home</a></div>
+</body>
+</html>
